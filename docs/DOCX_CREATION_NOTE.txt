@@ -1,0 +1,2 @@
+python-docx unavailable or failed: No module named 'docx'
+Use markdown files and convert via Google Docs.

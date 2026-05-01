@@ -1,0 +1,70 @@
+|--- feat_mean_tmax_c_week <= 33.89
+|   |--- feat_mean_tmax_c_week <= 31.55
+|   |   |--- feat_mean_tmax_c_week <= 29.39
+|   |   |   |--- feat_total_population <= 50849356.00
+|   |   |   |   |--- feat_heat_intensity <= 2.64
+|   |   |   |   |   |--- value: [45.20]
+|   |   |   |   |--- feat_heat_intensity >  2.64
+|   |   |   |   |   |--- value: [32.50]
+|   |   |   |--- feat_total_population >  50849356.00
+|   |   |   |   |--- feat_poverty_rate <= 0.12
+|   |   |   |   |   |--- value: [74.83]
+|   |   |   |   |--- feat_poverty_rate >  0.12
+|   |   |   |   |   |--- value: [62.00]
+|   |   |--- feat_mean_tmax_c_week >  29.39
+|   |   |   |--- feat_temp_range_c_week <= 3.19
+|   |   |   |   |--- value: [135.17]
+|   |   |   |--- feat_temp_range_c_week >  3.19
+|   |   |   |   |--- feat_temp_range_c_week <= 4.61
+|   |   |   |   |   |--- value: [81.29]
+|   |   |   |   |--- feat_temp_range_c_week >  4.61
+|   |   |   |   |   |--- value: [127.50]
+|   |--- feat_mean_tmax_c_week >  31.55
+|   |   |--- feat_mean_tmax_c_week <= 33.33
+|   |   |   |--- feat_poverty_rate <= 0.13
+|   |   |   |   |--- feat_heat_intensity <= 2.01
+|   |   |   |   |   |--- value: [232.67]
+|   |   |   |   |--- feat_heat_intensity >  2.01
+|   |   |   |   |   |--- value: [162.33]
+|   |   |   |--- feat_poverty_rate >  0.13
+|   |   |   |   |--- value: [111.80]
+|   |   |--- feat_mean_tmax_c_week >  33.33
+|   |   |   |--- feat_heat_intensity <= 1.59
+|   |   |   |   |--- value: [202.20]
+|   |   |   |--- feat_heat_intensity >  1.59
+|   |   |   |   |--- value: [261.14]
+|--- feat_mean_tmax_c_week >  33.89
+|   |--- feat_mean_tmax_c_week <= 35.76
+|   |   |--- feat_poverty_rate <= 0.13
+|   |   |   |--- feat_max_tmax_c_week <= 36.44
+|   |   |   |   |--- feat_heat_intensity <= 1.18
+|   |   |   |   |   |--- value: [291.00]
+|   |   |   |   |--- feat_heat_intensity >  1.18
+|   |   |   |   |   |--- value: [384.33]
+|   |   |   |--- feat_max_tmax_c_week >  36.44
+|   |   |   |   |--- feat_temp_range_c_week <= 4.26
+|   |   |   |   |   |--- value: [539.00]
+|   |   |   |   |--- feat_temp_range_c_week >  4.26
+|   |   |   |   |   |--- value: [410.25]
+|   |   |--- feat_poverty_rate >  0.13
+|   |   |   |--- feat_total_population <= 50849356.00
+|   |   |   |   |--- feat_mean_tmax_c_week <= 35.38
+|   |   |   |   |   |--- value: [299.80]
+|   |   |   |   |--- feat_mean_tmax_c_week >  35.38
+|   |   |   |   |   |--- value: [355.25]
+|   |   |   |--- feat_total_population >  50849356.00
+|   |   |   |   |--- value: [221.17]
+|   |--- feat_mean_tmax_c_week >  35.76
+|   |   |--- feat_total_population <= 51090694.00
+|   |   |   |--- feat_median_hh_income <= 70154.62
+|   |   |   |   |--- value: [376.00]
+|   |   |   |--- feat_median_hh_income >  70154.62
+|   |   |   |   |--- feat_heat_intensity <= 1.29
+|   |   |   |   |   |--- value: [475.25]
+|   |   |   |   |--- feat_heat_intensity >  1.29
+|   |   |   |   |   |--- value: [624.88]
+|   |   |--- feat_total_population >  51090694.00
+|   |   |   |--- feat_heat_intensity <= 1.34
+|   |   |   |   |--- value: [1001.25]
+|   |   |   |--- feat_heat_intensity >  1.34
+|   |   |   |   |--- value: [556.50]

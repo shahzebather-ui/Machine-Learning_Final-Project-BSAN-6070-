@@ -1,0 +1,24 @@
+{
+  "model": "DecisionTreeRegressor",
+  "selection_policy": "balanced_generalization_constraints",
+  "selected_params": {
+    "max_depth": 3,
+    "min_samples_leaf": 1,
+    "min_samples_split": 2,
+    "random_state": 42
+  },
+  "train_metrics": {
+    "mae": 75.49907770816574,
+    "rmse": 111.89377127184241,
+    "r2": 0.7553581854790997
+  },
+  "test_metrics": {
+    "mae": 139.80277697153423,
+    "rmse": 213.44658591121814,
+    "r2": 0.6105507640411244
+  },
+  "overfit_signals": {
+    "r2_gap_train_minus_test": 0.14480742143797531,
+    "rmse_ratio_test_over_train": 1.9075823746494016
+  }
+}

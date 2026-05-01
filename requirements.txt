@@ -1,0 +1,3 @@
+# Streamlit Community Cloud installs dependencies from this root file.
+# Keep canonical dependency list in deployment/requirements.txt.
+-r deployment/requirements.txt
