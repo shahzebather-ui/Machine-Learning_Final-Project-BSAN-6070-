@@ -1,0 +1,15 @@
+rows=159
+columns=11
+
+columns:
+- target_hri_rate
+- feat_mean_tmax_c_week
+- feat_max_tmax_c_week
+- feat_temp_range_c_week
+- feat_heat_intensity
+- feat_poverty_rate
+- feat_unemployment_rate
+- feat_median_hh_income
+- feat_total_population
+- record_year
+- region_label

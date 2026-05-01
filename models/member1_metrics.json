@@ -1,0 +1,19 @@
+{
+  "mae": 163.59621468382642,
+  "rmse": 251.25289199506054,
+  "r2": 0.4603718839004942,
+  "n_rows_total": 159,
+  "n_train": 127,
+  "n_test": 32,
+  "features": [
+    "feat_mean_tmax_c_week",
+    "feat_max_tmax_c_week",
+    "feat_temp_range_c_week",
+    "feat_heat_intensity",
+    "feat_poverty_rate",
+    "feat_unemployment_rate",
+    "feat_median_hh_income",
+    "feat_total_population"
+  ],
+  "target": "target_hri_rate"
+}
