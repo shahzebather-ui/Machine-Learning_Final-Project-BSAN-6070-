@@ -2,3 +2,9 @@
 __pycache__/
 *.pyc
 .ipynb_checkpoints/
+
+# Local-only planning docs (not for GitHub)
+docs/Game_Plan_Region9.md
+docs/Game_Plan_Region9.docx
+docs/My_Work_Checklist.md
+docs/My_Work_Checklist.docx
