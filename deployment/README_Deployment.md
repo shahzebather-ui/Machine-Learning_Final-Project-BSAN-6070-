@@ -1,26 +1,23 @@
 # Deployment Guide (Streamlit)
 
-All deployment-specific files are intentionally grouped under `deployment/` to reduce confusion.
+Deployment-specific notes live under `deployment/` to keep the repo root tidy.
 
-## Local Run
-1. Open terminal in project root.
-2. Install requirements:
-   - `pip install -r requirements.txt`
-3. Train model (if needed):
-   - `python scripts/train_member1_model.py`
-4. Run app:
-   - `streamlit run app/streamlit_app.py`
+## Local run
+
+1. Open a terminal in the project root.
+2. Install dependencies: `pip install -r requirements.txt`
+3. Train a model on `data/synthetic_hri_dataset_fixed.csv` and save it (for example) to `models/member1_decision_tree.pkl`, with metrics JSON if you want the dashboard cards.
+4. Run: `streamlit run app/streamlit_app.py`
 
 ## Streamlit Community Cloud
-1. Push this project to GitHub.
-2. Create a new Streamlit app and connect the repo/branch.
-3. Set app entrypoint to:
-   - `app/streamlit_app.py`
-4. Streamlit Cloud will install dependencies from root `requirements.txt`.
-5. Deploy and verify app loads prediction UI.
 
-## Required Files for Cloud
+1. Push this repo to GitHub.
+2. Create a Streamlit app and point the entry file to `app/streamlit_app.py`.
+3. Cloud installs from root `requirements.txt`.
+4. Ensure any required `.pkl` is in `models/` if you want live predictions in the app.
+
+## Required files for a full prediction UI
+
 - `app/streamlit_app.py`
-- `models/member1_elasticnet.pkl`
-- `requirements.txt` (root)
-- data files only if app needs them at runtime
+- `models/member1_decision_tree.pkl` (or update the model filename in the app)
+- `requirements.txt`

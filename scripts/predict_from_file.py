@@ -6,16 +6,15 @@ from pathlib import Path
 import joblib
 import pandas as pd
 
-
 FEATURE_COLS = [
-    "feat_mean_tmax_c_week",
-    "feat_max_tmax_c_week",
-    "feat_temp_range_c_week",
-    "feat_heat_intensity",
+    "max_temp_celsius",
+    "min_temp_celsius",
     "feat_poverty_rate",
     "feat_unemployment_rate",
     "feat_median_hh_income",
     "feat_total_population",
+    "overall_homeless",
+    "unsheltered_homeless",
 ]
 
 
@@ -26,11 +25,11 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument(
         "--input",
         required=True,
-        help="Path to input CSV containing the 8 feature columns.",
+        help="Path to input CSV containing the 8 feature columns used in training.",
     )
     parser.add_argument(
         "--model",
-        default="models/member1_elasticnet.pkl",
+        default="models/member1_decision_tree.pkl",
         help="Path to trained model .pkl file.",
     )
     parser.add_argument(
@@ -61,7 +60,7 @@ def main() -> None:
     preds = model.predict(df[FEATURE_COLS])
 
     out = df.copy()
-    out["predicted_hri_rate"] = preds
+    out["predicted_hri_value"] = preds
     output_path.parent.mkdir(parents=True, exist_ok=True)
     out.to_csv(output_path, index=False)
 

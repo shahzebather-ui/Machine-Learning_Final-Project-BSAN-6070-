@@ -9,15 +9,20 @@ import streamlit as st
 
 
 FEATURE_COLS = [
-    "feat_mean_tmax_c_week",
-    "feat_max_tmax_c_week",
-    "feat_temp_range_c_week",
-    "feat_heat_intensity",
+    "max_temp_celsius",
+    "min_temp_celsius",
     "feat_poverty_rate",
     "feat_unemployment_rate",
     "feat_median_hh_income",
     "feat_total_population",
+    "overall_homeless",
+    "unsheltered_homeless",
 ]
+
+SYNTHETIC_CSV = "data/synthetic_hri_dataset_fixed.csv"
+REAL_CSV = "data/final_hri_modeling_dataset.csv"
+MODEL_PATH = "models/member1_decision_tree.pkl"
+METRICS_PATH = "models/member1_decision_tree_metrics.json"
 
 
 def project_root() -> Path:
@@ -31,7 +36,7 @@ def load_model(model_path: Path):
 
 def metric_card(metrics_path: Path) -> None:
     if not metrics_path.exists():
-        st.info("No metrics file found yet. Run training script first.")
+        st.info("No metrics JSON yet. Train on synthetic data and save metrics next to the model.")
         return
     metrics = json.loads(metrics_path.read_text())
     c1, c2, c3 = st.columns(3)
@@ -94,7 +99,6 @@ def apply_custom_style(theme_mode: str) -> None:
             div[data-baseweb="select"] * {
                 border-color: __ACCENT__88 !important;
             }
-            /* Kill default red accents */
             *[style*="#ff4b4b"], *[style*="rgb(255, 75, 75)"] {
                 color: __ACCENT__ !important;
                 border-color: __ACCENT__ !important;
@@ -111,7 +115,7 @@ def apply_custom_style(theme_mode: str) -> None:
     st.markdown(css, unsafe_allow_html=True)
 
 
-def sidebar_controls(root: Path) -> dict:
+def sidebar_controls() -> dict:
     st.sidebar.header("Display Controls")
     theme_mode = st.sidebar.selectbox(
         "Theme Accent",
@@ -119,16 +123,10 @@ def sidebar_controls(root: Path) -> dict:
         index=0,
     )
     show_dataset_preview = st.sidebar.checkbox("Show dataset preview", value=True)
-    show_extra_overview_cards = st.sidebar.checkbox("Show quick overview cards", value=True)
-    show_uploaded_tree_first = st.sidebar.checkbox(
-        "Use uploaded dark tree first", value=True
-    )
     max_batch_rows = st.sidebar.slider("Batch preview rows", min_value=5, max_value=100, value=20, step=5)
     return {
         "theme_mode": theme_mode,
         "show_dataset_preview": show_dataset_preview,
-        "show_extra_overview_cards": show_extra_overview_cards,
-        "show_uploaded_tree_first": show_uploaded_tree_first,
         "max_batch_rows": max_batch_rows,
     }
 
@@ -143,45 +141,41 @@ def manual_prediction(model) -> None:
         values = {}
         left, right = st.columns(2)
         with left:
-            values["feat_mean_tmax_c_week"] = st.number_input(
-                "Mean Weekly Max Temp (C)", value=30.0
-            )
-            values["feat_max_tmax_c_week"] = st.number_input(
-                "Max Weekly Temp (C)", value=35.0
-            )
-            values["feat_temp_range_c_week"] = st.number_input(
-                "Weekly Temp Range (C)", value=5.0
-            )
-            values["feat_heat_intensity"] = st.number_input(
-                "Heat Intensity", value=2.0
-            )
-        with right:
+            values["max_temp_celsius"] = st.number_input("Max temp (°C)", value=30.0)
+            values["min_temp_celsius"] = st.number_input("Min temp (°C)", value=15.0)
             values["feat_poverty_rate"] = st.number_input(
-                "Poverty Rate (0-1)", min_value=0.0, max_value=1.0, value=0.14
+                "Poverty rate (0–1)", min_value=0.0, max_value=1.0, value=0.14
             )
             values["feat_unemployment_rate"] = st.number_input(
-                "Unemployment Rate (0-1)", min_value=0.0, max_value=1.0, value=0.06
+                "Unemployment rate (0–1)", min_value=0.0, max_value=1.0, value=0.06
             )
+        with right:
             values["feat_median_hh_income"] = st.number_input(
-                "Median Household Income", value=70000.0
+                "Median household income", value=70000.0
             )
             values["feat_total_population"] = st.number_input(
-                "Total Population", min_value=1.0, value=50000000.0
+                "Total population", min_value=1.0, value=5.0e7
             )
-        submitted = st.form_submit_button("Predict HRI Rate")
+            values["overall_homeless"] = st.number_input(
+                "Overall homeless count", min_value=0.0, value=50000.0
+            )
+            values["unsheltered_homeless"] = st.number_input(
+                "Unsheltered homeless count", min_value=0.0, value=15000.0
+            )
+        submitted = st.form_submit_button("Predict HRI value")
     if submitted:
         X = pd.DataFrame([values], columns=FEATURE_COLS)
         pred = float(model.predict(X)[0])
-        st.success(f"Predicted weekly HRI rate: {pred:.2f}")
+        st.success(f"Predicted HRI value: {pred:.2f}")
 
 
 def csv_prediction(model, max_rows: int) -> None:
     st.subheader("Batch Prediction from CSV")
     st.markdown(
-        "<div class='custom-subtle'>Upload a CSV containing the 8 feature columns.</div>",
+        "<div class='custom-subtle'>Upload a CSV with the same feature columns used in training.</div>",
         unsafe_allow_html=True,
     )
-    uploaded = st.file_uploader("Upload CSV with the 8 feature columns", type=["csv"])
+    uploaded = st.file_uploader("Upload CSV with feature columns", type=["csv"])
     if uploaded is None:
         return
     df = pd.read_csv(uploaded)
@@ -191,7 +185,7 @@ def csv_prediction(model, max_rows: int) -> None:
         return
     preds = model.predict(df[FEATURE_COLS])
     out = df.copy()
-    out["predicted_hri_rate"] = preds
+    out["predicted_hri_value"] = preds
     st.dataframe(out.head(max_rows), use_container_width=True)
     st.download_button(
         "Download predictions CSV",
@@ -201,89 +195,73 @@ def csv_prediction(model, max_rows: int) -> None:
     )
 
 
-def show_model_insights(root: Path, show_uploaded_tree_first: bool) -> None:
-    st.subheader("Model Insights")
-    st.markdown(
-        "<div class='custom-subtle'>Charts below are generated during analysis/tuning.</div>",
-        unsafe_allow_html=True,
-    )
-    viz_dir = root / "docs" / "analysis_outputs"
-    candidates = []
-    if show_uploaded_tree_first:
-        candidates.append(
-            ("Uploaded Decision Tree (Custom)", "viz_decision_tree_custom_uploaded.png")
-        )
-    candidates += [
-        ("Tuned Decision Tree (Top Levels)", "viz_tuned_dt_tree_top3.png"),
-        ("Feature Importances", "viz_tuned_dt_feature_importance.png"),
-        ("Train vs Test RMSE", "viz_tuned_dt_train_test_rmse.png"),
-        ("Train vs Test R²", "viz_tuned_dt_train_test_r2.png"),
-        ("Residual Distribution", "viz_tuned_dt_residual_distribution.png"),
-        ("Before vs After Summary", "viz_dt_before_vs_after_summary_table.png"),
-    ]
-    shown = 0
-    for title, filename in candidates:
-        p = viz_dir / filename
-        if p.exists():
-            st.markdown(f"**{title}**")
-            st.image(str(p), use_container_width=True)
-            shown += 1
-    if shown == 0:
-        st.info("No analysis visuals found yet. Generate charts first.")
-
-
 def main() -> None:
     st.set_page_config(
-        page_title="Region 9 (CA, AZ, NV, HI) Weekly HRI Predictor", layout="wide"
+        page_title="HRI predictor — synthetic train / real test",
+        layout="wide",
     )
     root = project_root()
-    ui = sidebar_controls(root)
+    ui = sidebar_controls()
     apply_custom_style(ui["theme_mode"])
-    st.title("Region 9 (CA, AZ, NV, HI) Weekly HRI Predictor")
-    st.caption("Decision Tree Regressor (Member 1) with 8 finalized features")
-    model_path = root / "models" / "member1_decision_tree.pkl"
-    metrics_path = root / "models" / "member1_decision_tree_metrics.json"
 
-    if not model_path.exists():
-        st.warning(
-            "Model not found. Run Decision Tree training/tuning first."
-        )
-        st.stop()
+    st.title("Weekly HRI prediction (heat-affected regions)")
+    st.caption(
+        "Train on synthetic data; evaluate on real holdout. "
+        "Target column: `hri_value`. See `data/dataset_schema.txt`."
+    )
 
-    model = load_model(model_path)
-    tab_overview, tab_manual, tab_batch, tab_insights = st.tabs(
-        ["Overview", "Manual Prediction", "Batch Prediction", "Model Insights"]
+    synth_path = root / SYNTHETIC_CSV
+    real_path = root / REAL_CSV
+    model_path = root / MODEL_PATH
+    metrics_path = root / METRICS_PATH
+
+    tab_overview, tab_manual, tab_batch = st.tabs(
+        ["Overview", "Manual Prediction", "Batch Prediction"]
     )
 
     with tab_overview:
-        st.subheader("Performance Overview")
-        metric_card(metrics_path)
-        if ui["show_extra_overview_cards"]:
-            c1, c2, c3 = st.columns(3)
-            data_path = root / "data" / "dataset_finalized_region9_weekly_8features.csv"
-            tuned_path = root / "models" / "decision_tree_tuned_metrics.json"
-            if data_path.exists():
-                row_count = len(pd.read_csv(data_path))
-                c1.metric("Rows in dataset", f"{row_count}")
-            if tuned_path.exists():
-                tuned = json.loads(tuned_path.read_text())
-                c2.metric("Selected max_depth", str(tuned["selected_params"]["max_depth"]))
-                c3.metric("Overfit R² gap", f"{tuned['overfit_signals']['r2_gap_train_minus_test']:.3f}")
-        if ui["show_dataset_preview"]:
-            data_path = root / "data" / "dataset_finalized_region9_weekly_8features.csv"
-            if data_path.exists():
-                st.markdown("**Dataset Preview**")
-                st.dataframe(pd.read_csv(data_path).head(8), use_container_width=True)
+        st.subheader("Data + status")
+        c1, c2 = st.columns(2)
+        synth_rows = len(pd.read_csv(synth_path)) if synth_path.exists() else None
+        real_rows = len(pd.read_csv(real_path)) if real_path.exists() else None
+        c1.metric("Synthetic train rows", str(synth_rows) if synth_rows is not None else "—")
+        c2.metric("Real evaluation rows", str(real_rows) if real_rows is not None else "—")
+
         st.markdown(
-            "<div class='custom-subtle'>Use tabs to run predictions or show charts in presentation mode.</div>",
-            unsafe_allow_html=True,
+            "**Alignment check:** run `python scripts/compare_synthetic_vs_real.py` "
+            "to write `models/synthetic_vs_real_summary.json`."
         )
+
+        metric_card(metrics_path)
+
+        if not model_path.exists():
+            st.warning(
+                f"No model at `{MODEL_PATH}` yet. After training on `{SYNTHETIC_CSV}`, "
+                "save your estimator there for predictions."
+            )
+        else:
+            st.success("Model file found — prediction tabs are enabled.")
+
+        if ui["show_dataset_preview"]:
+            if synth_path.exists():
+                st.markdown("**Synthetic preview**")
+                st.dataframe(pd.read_csv(synth_path).head(8), use_container_width=True)
+            if real_path.exists():
+                st.markdown("**Real evaluation preview**")
+                st.dataframe(pd.read_csv(real_path).head(8), use_container_width=True)
+
+    if not model_path.exists():
+        with tab_manual:
+            st.info("Train and save a model first to enable predictions.")
+        with tab_batch:
+            st.info("Train and save a model first to enable predictions.")
+        return
+
+    model = load_model(model_path)
     with tab_manual:
         manual_prediction(model)
     with tab_batch:
         csv_prediction(model, ui["max_batch_rows"])
-    with tab_insights:
-        show_model_insights(root, ui["show_uploaded_tree_first"])
 
 
 if __name__ == "__main__":
