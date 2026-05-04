@@ -1,12 +1,13 @@
 from __future__ import annotations
 
 import argparse
+import json
 from pathlib import Path
 
 import joblib
 import pandas as pd
 
-FEATURE_COLS = [
+DEFAULT_FEATURES = [
     "max_temp_celsius",
     "min_temp_celsius",
     "feat_poverty_rate",
@@ -37,6 +38,11 @@ def parse_args() -> argparse.Namespace:
         default="models/predictions_from_file.csv",
         help="Path to output predictions CSV.",
     )
+    parser.add_argument(
+        "--metrics",
+        default="models/member1_decision_tree_metrics.json",
+        help="Metrics JSON with feature_cols list (must match trained model).",
+    )
     return parser.parse_args()
 
 
@@ -45,19 +51,26 @@ def main() -> None:
     input_path = Path(args.input)
     model_path = Path(args.model)
     output_path = Path(args.output)
+    metrics_path = Path(args.metrics)
 
     if not input_path.exists():
         raise FileNotFoundError(f"Input file not found: {input_path}")
     if not model_path.exists():
         raise FileNotFoundError(f"Model file not found: {model_path}")
 
+    if metrics_path.exists():
+        meta = json.loads(metrics_path.read_text(encoding="utf-8"))
+        feature_cols = meta.get("feature_cols") or DEFAULT_FEATURES
+    else:
+        feature_cols = list(DEFAULT_FEATURES)
+
     df = pd.read_csv(input_path)
-    missing = [c for c in FEATURE_COLS if c not in df.columns]
+    missing = [c for c in feature_cols if c not in df.columns]
     if missing:
         raise ValueError(f"Missing required feature columns: {missing}")
 
     model = joblib.load(model_path)
-    preds = model.predict(df[FEATURE_COLS])
+    preds = model.predict(df[feature_cols])
 
     out = df.copy()
     out["predicted_hri_value"] = preds

@@ -34,6 +34,31 @@ def load_model(model_path: Path):
     return joblib.load(model_path)
 
 
+def feature_columns(root: Path) -> list[str]:
+    """Match training: use `feature_cols` from metrics JSON if present (after feature-drop)."""
+    mp = root / METRICS_PATH
+    if mp.exists():
+        m = json.loads(mp.read_text(encoding="utf-8"))
+        cols = m.get("feature_cols")
+        if isinstance(cols, list) and cols:
+            return cols
+    return list(FEATURE_COLS)
+
+
+# Defaults for manual form (only these labels get special ranges; others use generic defaults)
+_INPUT_DEFAULTS = {
+    "max_temp_celsius": 30.0,
+    "min_temp_celsius": 15.0,
+    "feat_poverty_rate": 0.14,
+    "feat_unemployment_rate": 0.06,
+    "feat_median_hh_income": 70000.0,
+    "feat_total_population": 5.0e7,
+    "overall_homeless": 50000.0,
+    "unsheltered_homeless": 15000.0,
+    "regionid": 4.0,
+}
+
+
 def metric_card(metrics_path: Path) -> None:
     if not metrics_path.exists():
         st.info("No metrics JSON yet. Train on synthetic data and save metrics next to the model.")
@@ -131,7 +156,7 @@ def sidebar_controls() -> dict:
     }
 
 
-def manual_prediction(model) -> None:
+def manual_prediction(model, feature_cols: list[str]) -> None:
     st.subheader("Manual Input Prediction")
     st.markdown(
         "<div class='custom-subtle'>Enter feature values and run one prediction.</div>",
@@ -140,36 +165,29 @@ def manual_prediction(model) -> None:
     with st.form("manual_pred_form"):
         values = {}
         left, right = st.columns(2)
-        with left:
-            values["max_temp_celsius"] = st.number_input("Max temp (°C)", value=30.0)
-            values["min_temp_celsius"] = st.number_input("Min temp (°C)", value=15.0)
-            values["feat_poverty_rate"] = st.number_input(
-                "Poverty rate (0–1)", min_value=0.0, max_value=1.0, value=0.14
-            )
-            values["feat_unemployment_rate"] = st.number_input(
-                "Unemployment rate (0–1)", min_value=0.0, max_value=1.0, value=0.06
-            )
-        with right:
-            values["feat_median_hh_income"] = st.number_input(
-                "Median household income", value=70000.0
-            )
-            values["feat_total_population"] = st.number_input(
-                "Total population", min_value=1.0, value=5.0e7
-            )
-            values["overall_homeless"] = st.number_input(
-                "Overall homeless count", min_value=0.0, value=50000.0
-            )
-            values["unsheltered_homeless"] = st.number_input(
-                "Unsheltered homeless count", min_value=0.0, value=15000.0
-            )
+        mid = (len(feature_cols) + 1) // 2
+        for i, col in enumerate(feature_cols):
+            box = left if i < mid else right
+            with box:
+                base = float(_INPUT_DEFAULTS.get(col, 0.0))
+                if col in ("feat_poverty_rate", "feat_unemployment_rate"):
+                    values[col] = st.number_input(
+                        col, min_value=0.0, max_value=1.0, value=base, key=f"in_{col}"
+                    )
+                elif col == "feat_total_population":
+                    values[col] = st.number_input(
+                        col, min_value=1.0, value=max(base, 1.0), key=f"in_{col}"
+                    )
+                else:
+                    values[col] = st.number_input(col, value=base, key=f"in_{col}")
         submitted = st.form_submit_button("Predict HRI value")
     if submitted:
-        X = pd.DataFrame([values], columns=FEATURE_COLS)
+        X = pd.DataFrame([values], columns=feature_cols)
         pred = float(model.predict(X)[0])
         st.success(f"Predicted HRI value: {pred:.2f}")
 
 
-def csv_prediction(model, max_rows: int) -> None:
+def csv_prediction(model, feature_cols: list[str], max_rows: int) -> None:
     st.subheader("Batch Prediction from CSV")
     st.markdown(
         "<div class='custom-subtle'>Upload a CSV with the same feature columns used in training.</div>",
@@ -179,11 +197,11 @@ def csv_prediction(model, max_rows: int) -> None:
     if uploaded is None:
         return
     df = pd.read_csv(uploaded)
-    missing = [c for c in FEATURE_COLS if c not in df.columns]
+    missing = [c for c in feature_cols if c not in df.columns]
     if missing:
         st.error(f"Missing columns: {missing}")
         return
-    preds = model.predict(df[FEATURE_COLS])
+    preds = model.predict(df[feature_cols])
     out = df.copy()
     out["predicted_hri_value"] = preds
     st.dataframe(out.head(max_rows), use_container_width=True)
@@ -258,10 +276,11 @@ def main() -> None:
         return
 
     model = load_model(model_path)
+    cols = feature_columns(root)
     with tab_manual:
-        manual_prediction(model)
+        manual_prediction(model, cols)
     with tab_batch:
-        csv_prediction(model, ui["max_batch_rows"])
+        csv_prediction(model, cols, ui["max_batch_rows"])
 
 
 if __name__ == "__main__":
