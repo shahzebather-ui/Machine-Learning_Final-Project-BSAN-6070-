@@ -1,11 +1,14 @@
 # BSAN 6070 — Machine Learning Final Project
 
-Predicting heat-related illness (**HRI**) rates using **synthetic data for training** and **real data for evaluation** only.
+Weekly heat-related illness (**HRI**) modeling: **train** on `data/synthetic_hri_dataset_fixed.csv`, **evaluate** on `data/final_hri_modeling_dataset.csv` (see `data/dataset_schema.txt`).
 
-**Data:** `data/synthetic_hri_dataset_fixed.csv` (train), `data/final_hri_modeling_dataset.csv` (evaluate). Target: `hri_value`. Schema: `data/dataset_schema.txt`.
+```bash
+pip install -r requirements.txt
+```
 
-**Member 1 pipeline:** `scripts/train_synthetic_real_dt.py` → saves `models/member1_decision_tree.pkl` and `models/member1_decision_tree_metrics.json`.
+```bash
+streamlit run app/streamlit_app.py
+```
 
-**App:** `pip install -r requirements.txt` then `streamlit run app/streamlit_app.py`
-
-**Deploy:** see `deployment/README_Deployment.md`.
+**Teammate workflow (setup, scripts, flags):** `docs/TEAM_SETUP.md`  
+**Deploy:** `deployment/README_Deployment.md`
