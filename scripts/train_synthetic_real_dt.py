@@ -1,0 +1,199 @@
+"""
+Train a DecisionTreeRegressor on synthetic data only; evaluate on real data only.
+
+Data roles (Step 1 in the project workflow):
+  - Fit:  data/synthetic_hri_dataset_fixed.csv
+  - Test: data/final_hri_modeling_dataset.csv
+
+The real file may include `regionid`; it is not used as a feature unless you pass
+--include-regionid (usually leave it out).
+
+Saves:
+  - models/member1_decision_tree.pkl
+  - models/member1_decision_tree_metrics.json
+  - models/member1_training_runs_log.csv   ← appends one row per run (settings + scores)
+
+Run from project root:
+  python3 scripts/train_synthetic_real_dt.py --max-depth 8 --min-samples-leaf 10
+"""
+
+from __future__ import annotations
+
+import argparse
+import csv
+import json
+from datetime import datetime, timezone
+from pathlib import Path
+
+import joblib
+import numpy as np
+import pandas as pd
+from sklearn.metrics import mean_absolute_error, mean_squared_error, r2_score
+from sklearn.tree import DecisionTreeRegressor
+
+TARGET_COL = "hri_value"
+BASE_FEATURES = [
+    "max_temp_celsius",
+    "min_temp_celsius",
+    "feat_poverty_rate",
+    "feat_unemployment_rate",
+    "feat_median_hh_income",
+    "feat_total_population",
+    "overall_homeless",
+    "unsheltered_homeless",
+]
+
+
+def parse_args() -> argparse.Namespace:
+    p = argparse.ArgumentParser(description="Decision Tree: synthetic train → real test.")
+    p.add_argument(
+        "--synthetic",
+        default="data/synthetic_hri_dataset_fixed.csv",
+        help="Synthetic training CSV path (relative to repo root).",
+    )
+    p.add_argument(
+        "--real",
+        default="data/final_hri_modeling_dataset.csv",
+        help="Real holdout CSV path (relative to repo root).",
+    )
+    p.add_argument("--random-state", type=int, default=42)
+    p.add_argument(
+        "--include-regionid",
+        action="store_true",
+        help="If set, includes regionid as a numeric feature (default: off).",
+    )
+    p.add_argument("--max-depth", type=int, default=None)
+    p.add_argument("--min-samples-leaf", type=int, default=1)
+    p.add_argument("--min-samples-split", type=int, default=2)
+    return p.parse_args()
+
+
+def main() -> None:
+    args = parse_args()
+    root = Path(__file__).resolve().parents[1]
+
+    synth_path = root / args.synthetic
+    real_path = root / args.real
+
+    feature_cols = list(BASE_FEATURES)
+    if args.include_regionid:
+        feature_cols = ["regionid", *feature_cols]
+
+    train_df = pd.read_csv(synth_path)
+    real_df = pd.read_csv(real_path)
+
+    for name, df in [("synthetic", train_df), ("real", real_df)]:
+        missing = [c for c in feature_cols + [TARGET_COL] if c not in df.columns]
+        if missing:
+            raise ValueError(f"{name} CSV missing columns: {missing}")
+
+    X_train = train_df[feature_cols].copy()
+    y_train = train_df[TARGET_COL].astype(float)
+    X_test = real_df[feature_cols].copy()
+    y_test = real_df[TARGET_COL].astype(float)
+
+    # Drop rows with NaNs in modeling columns (should be none if data is clean)
+    train_ok = X_train.notna().all(axis=1) & y_train.notna()
+    test_ok = X_test.notna().all(axis=1) & y_test.notna()
+    X_train, y_train = X_train.loc[train_ok], y_train.loc[train_ok]
+    X_test, y_test = X_test.loc[test_ok], y_test.loc[test_ok]
+
+    model = DecisionTreeRegressor(
+        random_state=args.random_state,
+        max_depth=args.max_depth,
+        min_samples_leaf=args.min_samples_leaf,
+        min_samples_split=args.min_samples_split,
+    )
+    model.fit(X_train, y_train)
+
+    y_pred_train = model.predict(X_train)
+    y_pred_test = model.predict(X_test)
+
+    def rmse(a: np.ndarray, b: np.ndarray) -> float:
+        return float(np.sqrt(mean_squared_error(a, b)))
+
+    metrics = {
+        "target_col": TARGET_COL,
+        "feature_cols": feature_cols,
+        "n_train_synthetic": int(len(X_train)),
+        "n_test_real": int(len(X_test)),
+        "train_on_synthetic": {
+            "mae": float(mean_absolute_error(y_train, y_pred_train)),
+            "rmse": rmse(y_train.values, y_pred_train),
+            "r2": float(r2_score(y_train, y_pred_train)),
+        },
+        "test_on_real": {
+            "mae": float(mean_absolute_error(y_test, y_pred_test)),
+            "rmse": rmse(y_test.values, y_pred_test),
+            "r2": float(r2_score(y_test, y_pred_test)),
+        },
+        "model_params": {
+            "max_depth": args.max_depth,
+            "min_samples_leaf": args.min_samples_leaf,
+            "min_samples_split": args.min_samples_split,
+            "random_state": args.random_state,
+        },
+        "feature_importances": {
+            c: float(v) for c, v in zip(feature_cols, model.feature_importances_)
+        },
+    }
+
+    # Streamlit card reads top-level mae / rmse / r2 → use **real test** here
+    metrics["mae"] = metrics["test_on_real"]["mae"]
+    metrics["rmse"] = metrics["test_on_real"]["rmse"]
+    metrics["r2"] = metrics["test_on_real"]["r2"]
+
+    models_dir = root / "models"
+    models_dir.mkdir(parents=True, exist_ok=True)
+    model_path = models_dir / "member1_decision_tree.pkl"
+    metrics_path = models_dir / "member1_decision_tree_metrics.json"
+
+    joblib.dump(model, model_path)
+    metrics_path.write_text(json.dumps(metrics, indent=2), encoding="utf-8")
+
+    log_path = models_dir / "member1_training_runs_log.csv"
+    log_row = {
+        "timestamp_utc": datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M:%S"),
+        "max_depth": args.max_depth,
+        "min_samples_leaf": args.min_samples_leaf,
+        "min_samples_split": args.min_samples_split,
+        "random_state": args.random_state,
+        "include_regionid": args.include_regionid,
+        "n_synthetic_train": len(X_train),
+        "n_real_test": len(X_test),
+        "real_test_mae": round(metrics["test_on_real"]["mae"], 6),
+        "real_test_rmse": round(metrics["test_on_real"]["rmse"], 6),
+        "real_test_r2": round(metrics["test_on_real"]["r2"], 6),
+        "synthetic_train_rmse": round(metrics["train_on_synthetic"]["rmse"], 6),
+    }
+    write_header = not log_path.exists()
+    with log_path.open("a", newline="", encoding="utf-8") as f:
+        w = csv.DictWriter(f, fieldnames=list(log_row.keys()))
+        if write_header:
+            w.writeheader()
+        w.writerow(log_row)
+
+    print()
+    print("========== WHERE FILES ARE (project folder) ==========")
+    print("  Model:  models/member1_decision_tree.pkl")
+    print("  Metrics JSON: models/member1_decision_tree_metrics.json")
+    print("  Run log (all tries): models/member1_training_runs_log.csv")
+    print()
+    print("========== THIS RUN — SETTINGS YOU USED ==========")
+    print(f"  max_depth={args.max_depth!r}  min_samples_leaf={args.min_samples_leaf}  min_samples_split={args.min_samples_split}")
+    print()
+    print("========== THIS RUN — SCORES (real 1460 rows) ==========")
+    print("  MAE :", round(metrics["test_on_real"]["mae"], 4))
+    print("  RMSE:", round(metrics["test_on_real"]["rmse"], 4))
+    print("  R2  :", round(metrics["test_on_real"]["r2"], 4))
+    print()
+    print("========== THIS RUN — SCORES (synthetic train, fit set) ==========")
+    print("  MAE :", round(metrics["train_on_synthetic"]["mae"], 4))
+    print("  RMSE:", round(metrics["train_on_synthetic"]["rmse"], 4))
+    print("  R2  :", round(metrics["train_on_synthetic"]["r2"], 4))
+    print()
+    print("Also appended one row to:", log_path.name)
+
+
+if __name__ == "__main__":
+    main()
