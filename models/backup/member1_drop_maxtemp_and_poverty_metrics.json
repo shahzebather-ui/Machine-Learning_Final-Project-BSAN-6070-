@@ -1,0 +1,44 @@
+{
+  "target_col": "hri_value",
+  "feature_cols": [
+    "min_temp_celsius",
+    "feat_unemployment_rate",
+    "feat_median_hh_income",
+    "feat_total_population",
+    "overall_homeless",
+    "unsheltered_homeless"
+  ],
+  "n_train_synthetic": 2000,
+  "n_test_real": 1460,
+  "train_on_synthetic": {
+    "mae": 99.87815971887093,
+    "rmse": 161.7546497573938,
+    "r2": 0.35647659221016537
+  },
+  "test_on_real": {
+    "mae": 98.08999274099713,
+    "rmse": 165.32523228055987,
+    "r2": 0.2427341100502035
+  },
+  "model_params": {
+    "max_depth": 5,
+    "min_samples_leaf": 9,
+    "min_samples_split": 2,
+    "random_state": 42,
+    "excluded_features": [
+      "max_temp_celsius",
+      "feat_poverty_rate"
+    ]
+  },
+  "feature_importances": {
+    "min_temp_celsius": 0.9012236770054423,
+    "feat_unemployment_rate": 0.013743975668002905,
+    "feat_median_hh_income": 0.015012550648849817,
+    "feat_total_population": 0.013412252068849497,
+    "overall_homeless": 0.019725939691128926,
+    "unsheltered_homeless": 0.03688160491772661
+  },
+  "mae": 98.08999274099713,
+  "rmse": 165.32523228055987,
+  "r2": 0.2427341100502035
+}

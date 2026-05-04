@@ -3,7 +3,6 @@
   "feature_cols": [
     "min_temp_celsius",
     "feat_median_hh_income",
-    "feat_total_population",
     "unsheltered_homeless"
   ],
   "n_train_synthetic": 2000,
@@ -27,13 +26,13 @@
       "max_temp_celsius",
       "feat_unemployment_rate",
       "feat_poverty_rate",
-      "overall_homeless"
+      "overall_homeless",
+      "feat_total_population"
     ]
   },
   "feature_importances": {
     "min_temp_celsius": 0.8979187361129584,
-    "feat_median_hh_income": 0.028244683058674537,
-    "feat_total_population": 0.01637627262861313,
+    "feat_median_hh_income": 0.044620955687287675,
     "unsheltered_homeless": 0.057460308199753965
   },
   "mae": 91.7907088547324,

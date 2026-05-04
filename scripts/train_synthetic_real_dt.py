@@ -8,13 +8,19 @@ Data roles (Step 1 in the project workflow):
 The real file may include `regionid`; it is not used as a feature unless you pass
 --include-regionid (usually leave it out).
 
-Saves:
+Saves (defaults; override paths so ablations do not overwrite your main artifact):
   - models/member1_decision_tree.pkl
   - models/member1_decision_tree_metrics.json
   - models/member1_training_runs_log.csv   ← appends one row per run (settings + scores)
 
 Run from project root:
   python3 scripts/train_synthetic_real_dt.py --max-depth 8 --min-samples-leaf 10
+
+Feature ablation without touching the default .pkl (example):
+  python3 scripts/train_synthetic_real_dt.py --max-depth 5 --min-samples-leaf 9 \\
+    --min-samples-split 2 --exclude-features feat_unemployment_rate \\
+    --model-out models/backup/member1_ablation_no_unemployment.pkl \\
+    --metrics-out models/backup/member1_ablation_no_unemployment_metrics.json
 """
 
 from __future__ import annotations
@@ -81,6 +87,16 @@ def parse_args() -> argparse.Namespace:
         default=[],
         metavar="COL",
         help="Feature column names to remove for this run (ablation / feature drop).",
+    )
+    p.add_argument(
+        "--model-out",
+        default="models/member1_decision_tree.pkl",
+        help="Path for saved .pkl relative to repo root (use e.g. models/backup/... for ablations).",
+    )
+    p.add_argument(
+        "--metrics-out",
+        default="models/member1_decision_tree_metrics.json",
+        help="Path for metrics JSON relative to repo root (must pair with the same run as --model-out).",
     )
     return p.parse_args()
 
@@ -169,8 +185,9 @@ def main() -> None:
 
     models_dir = root / "models"
     models_dir.mkdir(parents=True, exist_ok=True)
-    model_path = models_dir / "member1_decision_tree.pkl"
-    metrics_path = models_dir / "member1_decision_tree_metrics.json"
+    model_path = root / args.model_out
+    metrics_path = root / args.metrics_out
+    model_path.parent.mkdir(parents=True, exist_ok=True)
 
     joblib.dump(model, model_path)
     metrics_path.write_text(json.dumps(metrics, indent=2), encoding="utf-8")
@@ -194,10 +211,12 @@ def main() -> None:
     }
     _append_run_log(log_path, log_row)
 
+    rel_model = model_path.relative_to(root)
+    rel_metrics = metrics_path.relative_to(root)
     print()
     print("========== WHERE FILES ARE (project folder) ==========")
-    print("  Model:  models/member1_decision_tree.pkl")
-    print("  Metrics JSON: models/member1_decision_tree_metrics.json")
+    print(f"  Model:  {rel_model}")
+    print(f"  Metrics JSON: {rel_metrics}")
     print("  Run log (all tries): models/member1_training_runs_log.csv")
     print()
     print("========== THIS RUN — SETTINGS YOU USED ==========")
