@@ -26,7 +26,8 @@
     "max_depth": 5,
     "min_samples_leaf": 9,
     "min_samples_split": 2,
-    "random_state": 42
+    "random_state": 42,
+    "excluded_features": []
   },
   "feature_importances": {
     "max_temp_celsius": 0.8048486985075896,

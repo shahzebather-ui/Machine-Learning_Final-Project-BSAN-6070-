@@ -20,7 +20,6 @@ Run from project root:
 from __future__ import annotations
 
 import argparse
-import csv
 import json
 from datetime import datetime, timezone
 from pathlib import Path
@@ -44,6 +43,17 @@ BASE_FEATURES = [
 ]
 
 
+def _append_run_log(log_path: Path, log_row: dict) -> None:
+    """Append one row; extend columns if new fields appear (older rows get NaN for new cols)."""
+    new = pd.DataFrame([log_row])
+    if log_path.exists() and log_path.stat().st_size > 0:
+        old = pd.read_csv(log_path)
+        combined = pd.concat([old, new], ignore_index=True, sort=False)
+    else:
+        combined = new
+    combined.to_csv(log_path, index=False)
+
+
 def parse_args() -> argparse.Namespace:
     p = argparse.ArgumentParser(description="Decision Tree: synthetic train → real test.")
     p.add_argument(
@@ -65,6 +75,13 @@ def parse_args() -> argparse.Namespace:
     p.add_argument("--max-depth", type=int, default=None)
     p.add_argument("--min-samples-leaf", type=int, default=1)
     p.add_argument("--min-samples-split", type=int, default=2)
+    p.add_argument(
+        "--exclude-features",
+        nargs="*",
+        default=[],
+        metavar="COL",
+        help="Feature column names to remove for this run (ablation / feature drop).",
+    )
     return p.parse_args()
 
 
@@ -78,6 +95,12 @@ def main() -> None:
     feature_cols = list(BASE_FEATURES)
     if args.include_regionid:
         feature_cols = ["regionid", *feature_cols]
+
+    if args.exclude_features:
+        bad = set(args.exclude_features) - set(feature_cols)
+        if bad:
+            raise ValueError(f"--exclude-features unknown or not in current set: {sorted(bad)}")
+        feature_cols = [c for c in feature_cols if c not in set(args.exclude_features)]
 
     train_df = pd.read_csv(synth_path)
     real_df = pd.read_csv(real_path)
@@ -132,6 +155,7 @@ def main() -> None:
             "min_samples_leaf": args.min_samples_leaf,
             "min_samples_split": args.min_samples_split,
             "random_state": args.random_state,
+            "excluded_features": list(args.exclude_features) if args.exclude_features else [],
         },
         "feature_importances": {
             c: float(v) for c, v in zip(feature_cols, model.feature_importances_)
@@ -159,6 +183,8 @@ def main() -> None:
         "min_samples_split": args.min_samples_split,
         "random_state": args.random_state,
         "include_regionid": args.include_regionid,
+        "n_features": len(feature_cols),
+        "excluded_features": ",".join(args.exclude_features) if args.exclude_features else "",
         "n_synthetic_train": len(X_train),
         "n_real_test": len(X_test),
         "real_test_mae": round(metrics["test_on_real"]["mae"], 6),
@@ -166,12 +192,7 @@ def main() -> None:
         "real_test_r2": round(metrics["test_on_real"]["r2"], 6),
         "synthetic_train_rmse": round(metrics["train_on_synthetic"]["rmse"], 6),
     }
-    write_header = not log_path.exists()
-    with log_path.open("a", newline="", encoding="utf-8") as f:
-        w = csv.DictWriter(f, fieldnames=list(log_row.keys()))
-        if write_header:
-            w.writeheader()
-        w.writerow(log_row)
+    _append_run_log(log_path, log_row)
 
     print()
     print("========== WHERE FILES ARE (project folder) ==========")
@@ -180,7 +201,12 @@ def main() -> None:
     print("  Run log (all tries): models/member1_training_runs_log.csv")
     print()
     print("========== THIS RUN — SETTINGS YOU USED ==========")
-    print(f"  max_depth={args.max_depth!r}  min_samples_leaf={args.min_samples_leaf}  min_samples_split={args.min_samples_split}")
+    print(
+        f"  max_depth={args.max_depth!r}  min_samples_leaf={args.min_samples_leaf}  min_samples_split={args.min_samples_split}"
+    )
+    if args.exclude_features:
+        print(f"  EXCLUDED features: {', '.join(args.exclude_features)}")
+    print(f"  Features used ({len(feature_cols)}): {', '.join(feature_cols)}")
     print()
     print("========== THIS RUN — SCORES (real 1460 rows) ==========")
     print("  MAE :", round(metrics["test_on_real"]["mae"], 4))
