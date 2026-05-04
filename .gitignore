@@ -8,7 +8,6 @@ docs/Game_Plan_Region9.md
 docs/Game_Plan_Region9.docx
 docs/My_Work_Checklist.md
 docs/My_Work_Checklist.docx
-
-# Team-only handout (share via Box/email — never pushed to GitHub)
-docs/TEAM_README.md
-handover/
+# Team handoff / coordination — keep local or share via Box/email, not this repo
+docs/TEAM_SETUP.md
+docs/UPLOAD_LOG.md
