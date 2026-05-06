@@ -1,0 +1,10 @@
+{
+  "n_features": 3,
+  "features": "feat_median_hh_income|feat_total_population|min_temp_celsius",
+  "train_rmse": 174.91422018518665,
+  "test_mae": 98.0119368138586,
+  "test_rmse": 148.43569115658224,
+  "test_r2": 0.389554649934441,
+  "intercept": 953.4477318090679,
+  "coefficients_json": "{\"feat_median_hh_income\":0.0014245522022710783,\"feat_total_population\":-1.9015906218590664e-05,\"min_temp_celsius\":10.273050219777303}"
+}

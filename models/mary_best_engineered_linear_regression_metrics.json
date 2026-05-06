@@ -1,0 +1,17 @@
+{
+  "model_name": "Engineered Linear Regression",
+  "mae": 86.20943931589044,
+  "rmse": 141.39345010557088,
+  "r2": 0.44610340503888013,
+  "train_rows": 2000,
+  "test_rows": 1460,
+  "feature_cols": [
+    "min_temp_celsius",
+    "min_temp_sq",
+    "feat_median_hh_income",
+    "log_unsheltered_homeless",
+    "temp_income_interaction"
+  ],
+  "train_csv": "data/synthetic_hri_dataset_fixed.csv",
+  "test_csv": "data/final_hri_modeling_dataset.csv"
+}

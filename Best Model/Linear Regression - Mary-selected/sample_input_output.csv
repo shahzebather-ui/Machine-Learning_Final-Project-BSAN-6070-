@@ -1,0 +1,2 @@
+min_temp_celsius,min_temp_sq,feat_median_hh_income,log_unsheltered_homeless,temp_income_interaction,expected_prediction,actual_hri_value
+-2.1,4.41,65780.75,10.171260241993542,-138139.575,44.32187130738335,4

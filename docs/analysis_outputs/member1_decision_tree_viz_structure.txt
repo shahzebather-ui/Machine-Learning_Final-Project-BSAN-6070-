@@ -1,0 +1,94 @@
+|--- min_temp_celsius <= 8.55
+|   |--- min_temp_celsius <= -2.15
+|   |   |--- min_temp_celsius <= -6.95
+|   |   |   |--- min_temp_celsius <= -11.85
+|   |   |   |   |--- min_temp_celsius <= -16.05
+|   |   |   |   |   |--- value: [5.90]
+|   |   |   |   |--- min_temp_celsius >  -16.05
+|   |   |   |   |   |--- value: [12.55]
+|   |   |   |--- min_temp_celsius >  -11.85
+|   |   |   |   |--- unsheltered_homeless <= 111612.50
+|   |   |   |   |   |--- value: [21.41]
+|   |   |   |   |--- unsheltered_homeless >  111612.50
+|   |   |   |   |   |--- value: [11.61]
+|   |   |--- min_temp_celsius >  -6.95
+|   |   |   |--- feat_median_hh_income <= 88102.38
+|   |   |   |   |--- unsheltered_homeless <= 129715.00
+|   |   |   |   |   |--- value: [33.80]
+|   |   |   |   |--- unsheltered_homeless >  129715.00
+|   |   |   |   |   |--- value: [65.48]
+|   |   |   |--- feat_median_hh_income >  88102.38
+|   |   |   |   |--- unsheltered_homeless <= 15495.50
+|   |   |   |   |   |--- value: [35.42]
+|   |   |   |   |--- unsheltered_homeless >  15495.50
+|   |   |   |   |   |--- value: [81.69]
+|   |--- min_temp_celsius >  -2.15
+|   |   |--- min_temp_celsius <= 4.45
+|   |   |   |--- feat_median_hh_income <= 70154.62
+|   |   |   |   |--- unsheltered_homeless <= 3228.50
+|   |   |   |   |   |--- value: [97.39]
+|   |   |   |   |--- unsheltered_homeless >  3228.50
+|   |   |   |   |   |--- value: [37.12]
+|   |   |   |--- feat_median_hh_income >  70154.62
+|   |   |   |   |--- min_temp_celsius <= 4.25
+|   |   |   |   |   |--- value: [85.28]
+|   |   |   |   |--- min_temp_celsius >  4.25
+|   |   |   |   |   |--- value: [26.82]
+|   |   |--- min_temp_celsius >  4.45
+|   |   |   |--- unsheltered_homeless <= 15862.50
+|   |   |   |   |--- unsheltered_homeless <= 12339.50
+|   |   |   |   |   |--- value: [125.30]
+|   |   |   |   |--- unsheltered_homeless >  12339.50
+|   |   |   |   |   |--- value: [214.72]
+|   |   |   |--- unsheltered_homeless >  15862.50
+|   |   |   |   |--- feat_total_population <= 51196830.00
+|   |   |   |   |   |--- value: [108.48]
+|   |   |   |   |--- feat_total_population >  51196830.00
+|   |   |   |   |   |--- value: [66.21]
+|--- min_temp_celsius >  8.55
+|   |--- min_temp_celsius <= 13.25
+|   |   |--- unsheltered_homeless <= 22542.00
+|   |   |   |--- feat_median_hh_income <= 79330.88
+|   |   |   |   |--- min_temp_celsius <= 12.45
+|   |   |   |   |   |--- value: [156.06]
+|   |   |   |   |--- min_temp_celsius >  12.45
+|   |   |   |   |   |--- value: [352.47]
+|   |   |   |--- feat_median_hh_income >  79330.88
+|   |   |   |   |--- unsheltered_homeless <= 9090.50
+|   |   |   |   |   |--- value: [314.68]
+|   |   |   |   |--- unsheltered_homeless >  9090.50
+|   |   |   |   |   |--- value: [241.30]
+|   |   |--- unsheltered_homeless >  22542.00
+|   |   |   |--- unsheltered_homeless <= 124448.50
+|   |   |   |   |--- feat_total_population <= 51065542.00
+|   |   |   |   |   |--- value: [160.40]
+|   |   |   |   |--- feat_total_population >  51065542.00
+|   |   |   |   |   |--- value: [118.33]
+|   |   |   |--- unsheltered_homeless >  124448.50
+|   |   |   |   |--- feat_median_hh_income <= 84753.75
+|   |   |   |   |   |--- value: [151.24]
+|   |   |   |   |--- feat_median_hh_income >  84753.75
+|   |   |   |   |   |--- value: [283.76]
+|   |--- min_temp_celsius >  13.25
+|   |   |--- min_temp_celsius <= 20.55
+|   |   |   |--- feat_median_hh_income <= 84753.75
+|   |   |   |   |--- min_temp_celsius <= 13.75
+|   |   |   |   |   |--- value: [533.25]
+|   |   |   |   |--- min_temp_celsius >  13.75
+|   |   |   |   |   |--- value: [271.03]
+|   |   |   |--- feat_median_hh_income >  84753.75
+|   |   |   |   |--- unsheltered_homeless <= 15108.00
+|   |   |   |   |   |--- value: [493.59]
+|   |   |   |   |--- unsheltered_homeless >  15108.00
+|   |   |   |   |   |--- value: [305.26]
+|   |   |--- min_temp_celsius >  20.55
+|   |   |   |--- min_temp_celsius <= 24.80
+|   |   |   |   |--- feat_total_population <= 50849356.00
+|   |   |   |   |   |--- value: [623.77]
+|   |   |   |   |--- feat_total_population >  50849356.00
+|   |   |   |   |   |--- value: [427.76]
+|   |   |   |--- min_temp_celsius >  24.80
+|   |   |   |   |--- unsheltered_homeless <= 16879.50
+|   |   |   |   |   |--- value: [332.20]
+|   |   |   |   |--- unsheltered_homeless >  16879.50
+|   |   |   |   |   |--- value: [279.70]

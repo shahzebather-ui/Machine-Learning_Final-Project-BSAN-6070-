@@ -1,0 +1,4 @@
+model,baseline_rmse,tuned_rmse
+Decision Tree (Member 1),167.886778,152.936171
+Linear Regression (Member 2),174.908912,149.164207
+XGBoost (Member 3),TBD,155.160000
