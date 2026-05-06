@@ -1,3 +1,0 @@
-timestamp_utc,model_type,include_regionid,n_features,excluded_features,n_synthetic_train,n_real_test,real_test_mae,real_test_rmse,real_test_r2,synthetic_train_rmse
-2026-05-04 21:16:49,LinearRegression,False,8,,2000,1460,124.814619,174.908912,0.152394,171.592788
-2026-05-04 21:17:01,LinearRegression,False,4,"max_temp_celsius,feat_unemployment_rate,feat_poverty_rate,overall_homeless",2000,1460,98.948976,149.164207,0.383548,174.900548
