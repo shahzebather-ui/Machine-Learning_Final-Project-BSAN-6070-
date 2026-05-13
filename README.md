@@ -12,7 +12,7 @@
 
 **Target variable:** `hri_value`
 
-## Reproduce (Member 1 — Decision Tree)
+## (Member 1 — Decision Tree)
 
 ```bash
 pip install -r requirements.txt
