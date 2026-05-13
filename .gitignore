@@ -13,3 +13,7 @@ docs/TEAM_SETUP.md
 docs/UPLOAD_LOG.md
 docs/AI_ASSISTANT_PUSH_RULE.txt
 handover/
+
+# Local duplicate Streamlit bundle (deploy lives under app/)
+Mary_Streamlit_DEPLOY/
+Mary_Streamlit_DEPLOY.zip

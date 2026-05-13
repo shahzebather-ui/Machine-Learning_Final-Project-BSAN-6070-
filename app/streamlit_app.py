@@ -4,66 +4,56 @@ import json
 from pathlib import Path
 
 import joblib
+import numpy as np
 import pandas as pd
 import streamlit as st
 
-
-FEATURE_COLS = [
-    "max_temp_celsius",
-    "min_temp_celsius",
-    "feat_poverty_rate",
-    "feat_unemployment_rate",
-    "feat_median_hh_income",
-    "feat_total_population",
-    "overall_homeless",
-    "unsheltered_homeless",
-]
-
-SYNTHETIC_CSV = "data/synthetic_hri_dataset_fixed.csv"
-REAL_CSV = "data/final_hri_modeling_dataset.csv"
-MODEL_PATH = "models/member1_decision_tree.pkl"
-METRICS_PATH = "models/member1_decision_tree_metrics.json"
+# Flat zip layout: all paths are filenames next to this script.
+SYNTHETIC_CSV = "synthetic_hri_dataset_fixed.csv"
+REAL_CSV = "final_hri_modeling_dataset.csv"
+MODEL_PATH = "mary_best_engineered_linear_model.pkl"
+METRICS_PATH = "mary_best_engineered_linear_metrics.json"
+MARY_SUBMITTED_4FEAT_JSON = "mary_submitted_linear_regression_4feat_metrics.json"
+MARY_SUBMITTED_8FEAT_JSON = "mary_submitted_linear_regression_8feat_metrics.json"
+MARY_USER_INPUT_COLS = ["min_temp_celsius", "feat_median_hh_income", "unsheltered_homeless"]
 
 
 def project_root() -> Path:
-    return Path(__file__).resolve().parents[1]
+    return Path(__file__).resolve().parent
+
+
+def mary_engineered_features(df: pd.DataFrame) -> pd.DataFrame:
+    mt = df["min_temp_celsius"].astype(float)
+    inc = df["feat_median_hh_income"].astype(float)
+    ush = df["unsheltered_homeless"].astype(float).clip(lower=0)
+    return pd.DataFrame(
+        {
+            "min_temp_celsius": mt,
+            "min_temp_sq": mt**2,
+            "feat_median_hh_income": inc,
+            "log_unsheltered_homeless": np.log1p(ush),
+            "temp_income_interaction": mt * inc,
+        }
+    )
 
 
 @st.cache_resource
-def load_model(model_path: Path):
-    return joblib.load(model_path)
+def load_model():
+    return joblib.load(project_root() / MODEL_PATH)
 
 
-def feature_columns(root: Path) -> list[str]:
-    """Match training: use `feature_cols` from metrics JSON if present (after feature-drop)."""
-    mp = root / METRICS_PATH
-    if mp.exists():
-        m = json.loads(mp.read_text(encoding="utf-8"))
-        cols = m.get("feature_cols")
-        if isinstance(cols, list) and cols:
-            return cols
-    return list(FEATURE_COLS)
-
-
-# Defaults for manual form (only these labels get special ranges; others use generic defaults)
 _INPUT_DEFAULTS = {
-    "max_temp_celsius": 30.0,
     "min_temp_celsius": 15.0,
-    "feat_poverty_rate": 0.14,
-    "feat_unemployment_rate": 0.06,
     "feat_median_hh_income": 70000.0,
-    "feat_total_population": 5.0e7,
-    "overall_homeless": 50000.0,
     "unsheltered_homeless": 15000.0,
-    "regionid": 4.0,
 }
 
 
 def metric_card(metrics_path: Path) -> None:
     if not metrics_path.exists():
-        st.info("No metrics JSON yet. Train on synthetic data and save metrics next to the model.")
+        st.info("No metrics JSON next to the model.")
         return
-    metrics = json.loads(metrics_path.read_text())
+    metrics = json.loads(metrics_path.read_text(encoding="utf-8"))
     c1, c2, c3 = st.columns(3)
     c1.metric("MAE", f"{metrics.get('mae', 0):.2f}")
     c2.metric("RMSE", f"{metrics.get('rmse', 0):.2f}")
@@ -156,123 +146,119 @@ def sidebar_controls() -> dict:
     }
 
 
-def manual_prediction(model, feature_cols: list[str]) -> None:
+def manual_prediction(model) -> None:
     st.subheader("Manual Input Prediction")
     st.markdown(
-        "<div class='custom-subtle'>Enter feature values and run one prediction.</div>",
+        "<div class='custom-subtle'>Three inputs; app builds engineered features (squares, log1p, interaction) then predicts.</div>",
         unsafe_allow_html=True,
     )
     with st.form("manual_pred_form"):
-        values = {}
-        left, right = st.columns(2)
-        mid = (len(feature_cols) + 1) // 2
-        for i, col in enumerate(feature_cols):
-            box = left if i < mid else right
-            with box:
-                base = float(_INPUT_DEFAULTS.get(col, 0.0))
-                if col in ("feat_poverty_rate", "feat_unemployment_rate"):
-                    values[col] = st.number_input(
-                        col, min_value=0.0, max_value=1.0, value=base, key=f"in_{col}"
-                    )
-                elif col == "feat_total_population":
-                    values[col] = st.number_input(
-                        col, min_value=1.0, value=max(base, 1.0), key=f"in_{col}"
-                    )
-                else:
-                    values[col] = st.number_input(col, value=base, key=f"in_{col}")
+        left, right, _ = st.columns(3)
+        with left:
+            mt = st.number_input(
+                "min_temp_celsius",
+                value=float(_INPUT_DEFAULTS["min_temp_celsius"]),
+                key="m_mt",
+            )
+        with right:
+            inc = st.number_input(
+                "feat_median_hh_income",
+                min_value=1.0,
+                value=float(_INPUT_DEFAULTS["feat_median_hh_income"]),
+                key="m_inc",
+            )
+        ush = st.number_input(
+            "unsheltered_homeless",
+            min_value=0.0,
+            value=float(_INPUT_DEFAULTS["unsheltered_homeless"]),
+            key="m_ush",
+        )
         submitted = st.form_submit_button("Predict HRI value")
     if submitted:
-        X = pd.DataFrame([values], columns=feature_cols)
+        raw = pd.DataFrame([[mt, inc, ush]], columns=MARY_USER_INPUT_COLS)
+        X = mary_engineered_features(raw)
         pred = float(model.predict(X)[0])
         st.success(f"Predicted HRI value: {pred:.2f}")
 
 
-def csv_prediction(model, feature_cols: list[str], max_rows: int) -> None:
+def csv_prediction(model, max_rows: int) -> None:
     st.subheader("Batch Prediction from CSV")
     st.markdown(
-        "<div class='custom-subtle'>Upload a CSV with the same feature columns used in training.</div>",
+        "<div class='custom-subtle'>CSV must include: min_temp_celsius, feat_median_hh_income, unsheltered_homeless.</div>",
         unsafe_allow_html=True,
     )
     uploaded = st.file_uploader("Upload CSV with feature columns", type=["csv"])
     if uploaded is None:
         return
     df = pd.read_csv(uploaded)
-    missing = [c for c in feature_cols if c not in df.columns]
+    missing = [c for c in MARY_USER_INPUT_COLS if c not in df.columns]
     if missing:
         st.error(f"Missing columns: {missing}")
         return
-    preds = model.predict(df[feature_cols])
+    X = mary_engineered_features(df[MARY_USER_INPUT_COLS])
+    preds = model.predict(X)
     out = df.copy()
     out["predicted_hri_value"] = preds
     st.dataframe(out.head(max_rows), use_container_width=True)
     st.download_button(
         "Download predictions CSV",
         data=out.to_csv(index=False).encode("utf-8"),
-        file_name="predictions_member1.csv",
+        file_name="predictions_hri.csv",
         mime="text/csv",
     )
 
 
-def visuals_tab(root: Path) -> None:
-    st.subheader("Model visuals (Decision Tree)")
+def visuals_tab_regression_only(root: Path, metrics_path: Path) -> None:
+    st.subheader("Linear regression visuals")
     st.markdown(
-        "<div class='custom-subtle'>These images are generated by scripts and saved under "
-        "<code>docs/analysis_outputs/</code>.</div>",
+        "<div class='custom-subtle'>Intercept and coefficients for the deployed engineered linear model.</div>",
         unsafe_allow_html=True,
     )
 
-    out_dir = root / "docs" / "analysis_outputs"
-    if not out_dir.exists():
-        st.info("No `docs/analysis_outputs/` folder found yet.")
-        return
+    if metrics_path.exists():
+        m = json.loads(metrics_path.read_text(encoding="utf-8"))
+        st.metric("Intercept", f"{m.get('intercept', 0):.6f}")
+        coefs = m.get("coefficients") or {}
+        if coefs:
+            coef_df = pd.DataFrame([coefs]).T.rename(columns={0: "coefficient"})
+            st.dataframe(coef_df, use_container_width=True)
+            chart_df = coef_df.copy()
+            chart_df["abs"] = chart_df["coefficient"].abs()
+            st.markdown("**Coefficient magnitude (absolute value)**")
+            st.bar_chart(chart_df["abs"])
 
-    # SHAP
-    st.markdown("### SHAP")
-    shap_bar = out_dir / "shap_summary_bar_member1.png"
-    shap_force = out_dir / "shap_force_member1.png"
-    c1, c2 = st.columns(2)
-    with c1:
-        if shap_bar.exists():
-            st.image(str(shap_bar), caption="SHAP summary (bar) — Decision Tree", use_container_width=True)
-        else:
-            st.info("Missing: `shap_summary_bar_member1.png`")
-    with c2:
-        if shap_force.exists():
-            st.image(str(shap_force), caption="SHAP force (one row) — Decision Tree", use_container_width=True)
-        else:
-            st.info("Missing: `shap_force_member1.png`")
-
-    # Tree visualizations
-    st.markdown("### Decision Tree structure")
-    tree_imgs = [
-        ("Depth 2 (slide)", out_dir / "member1_decision_tree_viz_depth_2_slide.png"),
-        ("Depth 3", out_dir / "member1_decision_tree_viz_depth_3.png"),
-        ("Depth 4", out_dir / "member1_decision_tree_viz_depth_4.png"),
-        ("Full tree", out_dir / "member1_decision_tree_viz_full.png"),
-    ]
-    for label, path in tree_imgs:
-        if path.exists():
-            st.image(str(path), caption=label, use_container_width=True)
-
-    # Comparison charts (optional)
-    st.markdown("### Comparison charts (optional)")
-    charts = [
-        ("Tuned RMSE ranking", out_dir / "chart_bar_tuned_rmse_ranking.png"),
-        ("RMSE reduction after tuning", out_dir / "chart_bar_error_reduction_percent.png"),
-        ("RMSE vs R² vs MAE tradeoff", out_dir / "chart_bubble_rmse_r2_mae_tradeoff.png"),
-        ("Baseline vs tuned RMSE (dumbbell)", out_dir / "chart_dumbbell_baseline_vs_tuned_rmse.png"),
-    ]
-    cc1, cc2 = st.columns(2)
-    for i, (label, path) in enumerate(charts):
-        box = cc1 if i % 2 == 0 else cc2
-        with box:
-            if path.exists():
-                st.image(str(path), caption=label, use_container_width=True)
+    with st.expander("Mary's OLS runs (4-feature and 8-feature metrics from JSON)"):
+        p4 = root / MARY_SUBMITTED_4FEAT_JSON
+        p8 = root / MARY_SUBMITTED_8FEAT_JSON
+        if p4.exists():
+            j = json.loads(p4.read_text(encoding="utf-8"))
+            tr = j.get("test_on_real") or {}
+            st.markdown("**4-feature linear regression (real holdout)**")
+            st.write(
+                f"MAE {tr.get('mae', j.get('mae')):.4f}, "
+                f"RMSE {tr.get('rmse', j.get('rmse')):.4f}, "
+                f"R² {tr.get('r2', j.get('r2')):.4f}"
+            )
+            c4 = j.get("coefficients") or {}
+            if c4:
+                st.dataframe(pd.DataFrame([c4]).T.rename(columns={0: "coefficient"}))
+        if p8.exists():
+            j = json.loads(p8.read_text(encoding="utf-8"))
+            tr = j.get("test_on_real") or {}
+            st.markdown("**8-feature linear regression (real holdout)**")
+            st.write(
+                f"MAE {tr.get('mae', j.get('mae')):.4f}, "
+                f"RMSE {tr.get('rmse', j.get('rmse')):.4f}, "
+                f"R² {tr.get('r2', j.get('r2')):.4f}"
+            )
+            c8 = j.get("coefficients") or {}
+            if c8:
+                st.dataframe(pd.DataFrame([c8]).T.rename(columns={0: "coefficient"}))
 
 
 def main() -> None:
     st.set_page_config(
-        page_title="HRI predictor — synthetic train / real test",
+        page_title="HRI predictor — linear regression",
         layout="wide",
     )
     root = project_root()
@@ -281,8 +267,8 @@ def main() -> None:
 
     st.title("Weekly HRI prediction (heat-affected regions)")
     st.caption(
-        "Train on synthetic data; evaluate on real holdout. "
-        "Target column: `hri_value`. See `data/dataset_schema.txt`."
+        "Deployed model: Mary's engineered linear regression. Target: `hri_value`. "
+        "See `dataset_schema.txt`."
     )
 
     synth_path = root / SYNTHETIC_CSV
@@ -302,18 +288,10 @@ def main() -> None:
         c1.metric("Synthetic train rows", str(synth_rows) if synth_rows is not None else "—")
         c2.metric("Real evaluation rows", str(real_rows) if real_rows is not None else "—")
 
-        st.markdown(
-            "**Alignment check:** run `python scripts/compare_synthetic_vs_real.py` "
-            "to write `models/synthetic_vs_real_summary.json`."
-        )
-
         metric_card(metrics_path)
 
         if not model_path.exists():
-            st.warning(
-                f"No model at `{MODEL_PATH}` yet. After training on `{SYNTHETIC_CSV}`, "
-                "save your estimator there for predictions."
-            )
+            st.warning(f"Missing `{MODEL_PATH}` in this folder.")
         else:
             st.success("Model file found — prediction tabs are enabled.")
 
@@ -327,19 +305,18 @@ def main() -> None:
 
     if not model_path.exists():
         with tab_manual:
-            st.info("Train and save a model first to enable predictions.")
+            st.info("Add `mary_best_engineered_linear_model.pkl` next to `streamlit_app.py`.")
         with tab_batch:
-            st.info("Train and save a model first to enable predictions.")
+            st.info("Add `mary_best_engineered_linear_model.pkl` next to `streamlit_app.py`.")
         return
 
-    model = load_model(model_path)
-    cols = feature_columns(root)
+    model = load_model()
     with tab_manual:
-        manual_prediction(model, cols)
+        manual_prediction(model)
     with tab_batch:
-        csv_prediction(model, cols, ui["max_batch_rows"])
+        csv_prediction(model, ui["max_batch_rows"])
     with tab_visuals:
-        visuals_tab(root)
+        visuals_tab_regression_only(root, metrics_path)
 
 
 if __name__ == "__main__":

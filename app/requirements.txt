@@ -1,0 +1,6 @@
+# Pin sklearn to the version used when Mary's .pkl was saved (avoids Cloud unpickle failures).
+streamlit>=1.34
+pandas>=2.0
+numpy>=1.24,<3
+scikit-learn==1.6.1
+joblib>=1.3

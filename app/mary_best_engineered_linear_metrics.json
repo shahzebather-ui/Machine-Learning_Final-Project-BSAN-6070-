@@ -1,0 +1,34 @@
+{
+  "model_type": "LinearRegression",
+  "artifact": "mary_best_engineered_linear_model.pkl",
+  "note": "Engineered features built in Streamlit: min_temp_sq=min_temp^2, log_unsheltered_homeless=log1p(unsheltered), temp_income_interaction=min_temp*median_income. Metrics recomputed on repo real CSV.",
+  "feature_cols_model_order": [
+    "min_temp_celsius",
+    "min_temp_sq",
+    "feat_median_hh_income",
+    "log_unsheltered_homeless",
+    "temp_income_interaction"
+  ],
+  "user_input_columns": [
+    "min_temp_celsius",
+    "feat_median_hh_income",
+    "unsheltered_homeless"
+  ],
+  "n_test_real": 1460,
+  "test_on_real": {
+    "mae": 86.20943931588613,
+    "rmse": 141.3934501055762,
+    "r2": 0.4461034050388384
+  },
+  "mae": 86.20943931588613,
+  "rmse": 141.3934501055762,
+  "r2": 0.4461034050388384,
+  "intercept": 30.778089628593378,
+  "coefficients": {
+    "min_temp_celsius": 4.171477588264271,
+    "min_temp_sq": 0.27979680978955823,
+    "feat_median_hh_income": 0.0008450779431496385,
+    "log_unsheltered_homeless": -2.6216540107060795,
+    "temp_income_interaction": 5.6858109043045335e-05
+  }
+}

@@ -1,0 +1,13 @@
+Self-contained Streamlit app (Mary engineered linear model). All paths are relative to this folder.
+
+Local:
+  cd path/to/ProjectV2_Region9_Final/app
+  pip install -r requirements.txt
+  streamlit run streamlit_app.py
+
+Streamlit Community Cloud:
+  Main file path: app/streamlit_app.py
+  Requirements file: app/requirements.txt   (required — pins scikit-learn 1.6.1 for the .pkl)
+  Branch: main
+
+Do not use only the repo-root requirements.txt for this app unless it pins sklearn==1.6.1; unpickle may fail on Cloud otherwise.

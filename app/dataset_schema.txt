@@ -1,0 +1,22 @@
+# Current modeling CSVs (professor workflow: train synthetic, test real)
+
+## data/synthetic_hri_dataset_fixed.csv
+- rows: 2000 (synthetic training)
+- columns:
+  - max_temp_celsius (float)
+  - min_temp_celsius (float)
+  - feat_poverty_rate (float, 0-1)
+  - feat_unemployment_rate (float, 0-1)
+  - feat_median_hh_income (float)
+  - feat_total_population (int)
+  - overall_homeless (int)
+  - unsheltered_homeless (int)
+  - hri_value (int, target)
+
+## data/final_hri_modeling_dataset.csv
+- rows: 1460 (real evaluation / holdout)
+- columns: regionid (int, optional metadata) + same feature/target columns as synthetic
+
+Modeling convention:
+- Target column name: hri_value
+- Feature columns: all numeric columns except hri_value (and exclude regionid if not used as a feature)

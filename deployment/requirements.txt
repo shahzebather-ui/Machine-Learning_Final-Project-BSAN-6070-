@@ -1,7 +1,8 @@
 streamlit>=1.34
 pandas>=2.0
-scikit-learn>=1.3
-numpy>=1.24
+# Match sklearn version used when linear regression .pkl was saved (Streamlit Cloud unpickle).
+scikit-learn==1.6.1
+numpy>=1.24,<3
 joblib>=1.3
 shap>=0.44
 matplotlib>=3.8
