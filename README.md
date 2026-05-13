@@ -12,7 +12,7 @@
 
 **Target variable:** `hri_value`
 
-##(Member 1 — Decision Tree)
+## Reproduce (Member 1 — Decision Tree)
 
 ```bash
 pip install -r requirements.txt
@@ -30,7 +30,7 @@ Outputs: `models/member1_decision_tree.pkl`, `models/member1_decision_tree_metri
 streamlit run app/streamlit_app.py
 ```
 
-The app performs predictions using the saved model files and metrics JSON referenced in `app/streamlit_app.py` (by default: `models/mary_best_engineered_linear_model.pkl` and `models/mary_best_engineered_linear_metrics.json`).
+Saved artifacts used by the app are referenced in `app/streamlit_app.py` (default: `models/mary_best_engineered_linear_model.pkl` and `models/mary_best_engineered_linear_metrics.json`).
 
 ## Other utilities
 
