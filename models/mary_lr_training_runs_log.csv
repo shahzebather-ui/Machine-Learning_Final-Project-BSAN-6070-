@@ -1,0 +1,3 @@
+timestamp_utc,n_features,excluded_features,real_test_rmse,real_test_mae,real_test_r2
+2026-05-13 04:50:06,8,,174.908912,124.814619,0.152394
+2026-05-13 04:50:08,4,"max_temp_celsius,feat_unemployment_rate,feat_poverty_rate,overall_homeless",149.164207,98.948976,0.383548
