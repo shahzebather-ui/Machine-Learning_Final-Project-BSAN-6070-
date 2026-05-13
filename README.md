@@ -24,11 +24,13 @@ python3 scripts/train_synthetic_real_dt.py --max-depth 5 --min-samples-leaf 9 --
 
 Outputs: `models/member1_decision_tree.pkl`, `models/member1_decision_tree_metrics.json`, `models/member1_training_runs_log.csv`
 
-## Application
+## Application (Streamlit)
 
 ```bash
 streamlit run app/streamlit_app.py
 ```
+
+The app performs predictions using the saved model files and metrics JSON referenced in `app/streamlit_app.py` (by default: `models/mary_best_engineered_linear_model.pkl` and `models/mary_best_engineered_linear_metrics.json`).
 
 ## Other utilities
 
